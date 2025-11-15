@@ -34,6 +34,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         sexualOrientation: event.sexualOrientation,
         pronouns: event.pronouns,
         interestedIn: event.interestedIn,
+        location: event.location
       );
       emit(AuthSuccess(user));
     } catch (e) {

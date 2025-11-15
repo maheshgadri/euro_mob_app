@@ -5,7 +5,8 @@ import 'package:europhia/src/data/models/user_model.dart';
 import 'package:europhia/src/presentation/bloc/auth/auth_event.dart';
 import 'package:europhia/src/presentation/bloc/auth/auth_state.dart';
 
-
+import 'package:geolocator/geolocator.dart';
+import 'package:geocoding/geocoding.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:europhia/src/presentation/bloc/auth/auth_bloc.dart';
@@ -32,10 +33,28 @@ class _SignupScreenState extends State<SignupScreen> {
   String _selectedGender = 'Male';
   String _selectedOrientation = 'Straight';
   String? _selectedInterestedIn;
+  String? _location;
 
   bool _isPasswordVisible = false;
 
   final List<String> _interestedInOptions = ['Male', 'Female', 'Both'];
+
+  String? countryName;
+
+  @override
+  void initState() {
+    super.initState();
+    loadCountry();
+  }
+
+  void loadCountry() async {
+    String? c = await getUserCountry();
+
+    setState(() {
+      countryName = c ?? "Unknown";
+      _location = c ?? "Unknown";   // <<< FIXED
+    });
+  }
 
   Future<void> _pickDate() async {
     final DateTime? pickedDate = await showDatePicker(
@@ -53,8 +72,46 @@ class _SignupScreenState extends State<SignupScreen> {
     }
   }
 
+  Future<String?> getUserCountry() async {
+    bool serviceEnabled;
+    LocationPermission permission;
+
+    // Check if location service is enabled
+    serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      return null;
+    }
+
+    permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) {
+        return null;
+      }
+    }
+
+    if (permission == LocationPermission.deniedForever) {
+      return null;
+    }
+
+    Position pos = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high);
+
+    List<Placemark> placemarks =
+    await placemarkFromCoordinates(pos.latitude, pos.longitude);
+
+    if (placemarks.isNotEmpty) {
+      return placemarks.first.country; // Country Name (India, UK, USA, etc)
+    }
+
+    return null;
+  }
+
   void _submitSignup() {
     if (_formKey.currentState!.validate()) {
+
+      print("📤 SIGNUP SENDING => countryName: $countryName, _location: $_location");
+
       context.read<AuthBloc>().add(SignupRequested(
         username: _usernameController.text.trim(),
         email: _emailController.text.trim(),
@@ -65,9 +122,11 @@ class _SignupScreenState extends State<SignupScreen> {
         sexualOrientation: _selectedOrientation,
         pronouns: _pronounsController.text.trim(),
         interestedIn: _selectedInterestedIn ?? '',
+        location: _location ?? countryName ?? '',
       ));
     }
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -194,6 +253,14 @@ class _SignupScreenState extends State<SignupScreen> {
                     const InputDecoration(labelText: "Sexual Orientation"),
                   ),
                   const SizedBox(height: 10),
+                  TextFormField(
+                    controller: TextEditingController(text: countryName),
+                    readOnly: true,
+                    decoration: InputDecoration(
+                      labelText: "Country",
+                      prefixIcon: Icon(Icons.location_on),
+                    ),
+                  ),
 
                   TextFormField(
                     controller: _pronounsController,

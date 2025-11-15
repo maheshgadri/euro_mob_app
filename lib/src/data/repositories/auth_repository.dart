@@ -61,6 +61,7 @@ class AuthRepository {
     required String sexualOrientation,
     required String pronouns,
     required String interestedIn,
+    required String location,
   }) async {
     final response = await http.post(
       Uri.parse(ApiConstants.signup),
@@ -75,8 +76,11 @@ class AuthRepository {
         "sexualOrientation": sexualOrientation,
         "pronouns": pronouns,
         "interestedIn": interestedIn,
+        "location": location
       }),
     );
+
+    print("📤 SIGNUP SENDING => countryName: $location");
 
     // ✅ Debugging line — see the full backend response in your console
     print('Signup response: ${response.statusCode} => ${response.body}');

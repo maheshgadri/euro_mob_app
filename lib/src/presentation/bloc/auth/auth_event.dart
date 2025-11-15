@@ -21,6 +21,7 @@ class SignupRequested extends AuthEvent {
   final String sexualOrientation;
   final String pronouns;
   final String interestedIn;
+  final String location;
 
   SignupRequested({
     required this.username,
@@ -32,5 +33,6 @@ class SignupRequested extends AuthEvent {
     required this.sexualOrientation,
     required this.pronouns,
     required this.interestedIn,
+    required this.location
   });
 }
